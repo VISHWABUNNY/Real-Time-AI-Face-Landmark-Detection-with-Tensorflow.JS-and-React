@@ -120,20 +120,27 @@ function App() {
 
   const runFacemesh = async () => {
     // ── WebGL performance flags ──────────────────────────────
-    tf.env().set("WEBGL_PACK",                 true);
-    tf.env().set("WEBGL_CONV_IM2COL",          true);
-    tf.env().set("WEBGL_PACK_DEPTHWISECONV",   true);
+    tf.env().set("WEBGL_PACK",               true);
+    tf.env().set("WEBGL_CONV_IM2COL",        true);
+    tf.env().set("WEBGL_PACK_DEPTHWISECONV", true);
 
     setLoadingMsg("Setting up WebGL GPU backend...");
     await tf.setBackend("webgl");
     await tf.ready();
     setGpuBackend(tf.getBackend().toUpperCase());
 
-    setLoadingMsg("Loading FaceMesh model (maxFaces=1)...");
-    const net = await facemesh.load(facemesh.SupportedPackages.mediapipeFacemesh, {
-      maxFaces: 1,           // only track one face
-      shouldLoadIrisModel: false, // skip iris — saves ~30%
-    });
+    setLoadingMsg("Loading FaceMesh model...");
+    let net;
+    try {
+      // NOTE: face-landmarks-detection 0.0.2 only supports maxFaces
+      net = await facemesh.load(facemesh.SupportedPackages.mediapipeFacemesh, {
+        maxFaces: 1,
+      });
+    } catch (err) {
+      setLoadingMsg("Model load failed — check console");
+      console.error("FaceMesh load error:", err);
+      return;
+    }
 
     // Create offscreen canvas for downscaled inference
     const offscreen   = document.createElement("canvas");
